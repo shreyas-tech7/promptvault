@@ -8,6 +8,7 @@ const MESSAGES: Record<string, string> = {
   created: "Prompt published 🎉",
   updated: "Prompt updated",
   deleted: "Prompt deleted",
+  confirmed: "Email confirmed — you're logged in 🎉",
 };
 
 /**

@@ -57,11 +57,18 @@ export async function signup(
     return { error: "Password must be at least 6 characters long." };
   }
 
+  // Server Actions have no `window`, so the app's public origin comes from env.
+  // Must match the Site URL configured in the Supabase dashboard.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { username } },
+    options: {
+      data: { username },
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+    },
   });
 
   if (error) {

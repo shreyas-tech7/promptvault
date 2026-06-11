@@ -24,6 +24,17 @@ type ParseResult =
   | { ok: true; data: ParsedPrompt }
   | { ok: false; state: PromptFormState };
 
+/** A generic message shown to users when a database write fails. We never
+ * surface the raw Supabase/Postgres error, which can leak schema internals. */
+const GENERIC_DB_ERROR = "Something went wrong. Please try again.";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 function parsePrompt(formData: FormData): ParseResult {
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
@@ -70,12 +81,16 @@ export async function createPrompt(
   const parsed = parsePrompt(formData);
   if (!parsed.ok) return parsed.state;
 
+  // user_id is automatically set from the authenticated session.
+  // This prevents users from creating prompts under someone else's account.
+  // The database enforces this with NOT NULL + foreign key + RLS policies.
   const { error } = await supabase
     .from("prompts")
     .insert({ ...parsed.data, user_id: user.id });
 
   if (error) {
-    return { error: error.message };
+    console.error("createPrompt failed:", error);
+    return { error: GENERIC_DB_ERROR };
   }
 
   revalidatePath("/", "layout");
@@ -96,9 +111,14 @@ export async function updatePrompt(
     redirect(`/login?redirectTo=/prompts/${id}/edit`);
   }
 
+  if (!isUuid(id)) {
+    return { error: GENERIC_DB_ERROR };
+  }
+
   const parsed = parsePrompt(formData);
   if (!parsed.ok) return parsed.state;
 
+  // The `user_id` filter (plus RLS) ensures users can only edit their own rows.
   const { error } = await supabase
     .from("prompts")
     .update(parsed.data)
@@ -106,7 +126,8 @@ export async function updatePrompt(
     .eq("user_id", user.id);
 
   if (error) {
-    return { error: error.message };
+    console.error("updatePrompt failed:", error);
+    return { error: GENERIC_DB_ERROR };
   }
 
   revalidatePath("/", "layout");
@@ -123,6 +144,11 @@ export async function deletePrompt(id: string): Promise<{ error: string } | void
     redirect("/login");
   }
 
+  if (!isUuid(id)) {
+    return { error: GENERIC_DB_ERROR };
+  }
+
+  // The `user_id` filter (plus RLS) ensures users can only delete their own rows.
   const { error } = await supabase
     .from("prompts")
     .delete()
@@ -130,7 +156,8 @@ export async function deletePrompt(id: string): Promise<{ error: string } | void
     .eq("user_id", user.id);
 
   if (error) {
-    return { error: error.message };
+    console.error("deletePrompt failed:", error);
+    return { error: GENERIC_DB_ERROR };
   }
 
   revalidatePath("/", "layout");
@@ -149,6 +176,10 @@ export async function toggleUpvote(
     return { error: "You must be logged in to upvote." };
   }
 
+  if (!isUuid(promptId)) {
+    return { error: GENERIC_DB_ERROR };
+  }
+
   const { data: existing, error: selectError } = await supabase
     .from("upvotes")
     .select("id")
@@ -157,7 +188,8 @@ export async function toggleUpvote(
     .maybeSingle();
 
   if (selectError) {
-    return { error: selectError.message };
+    console.error("toggleUpvote select failed:", selectError);
+    return { error: GENERIC_DB_ERROR };
   }
 
   if (existing) {
@@ -165,12 +197,18 @@ export async function toggleUpvote(
       .from("upvotes")
       .delete()
       .eq("id", existing.id);
-    if (error) return { error: error.message };
+    if (error) {
+      console.error("toggleUpvote delete failed:", error);
+      return { error: GENERIC_DB_ERROR };
+    }
   } else {
     const { error } = await supabase
       .from("upvotes")
       .insert({ user_id: user.id, prompt_id: promptId });
-    if (error) return { error: error.message };
+    if (error) {
+      console.error("toggleUpvote insert failed:", error);
+      return { error: GENERIC_DB_ERROR };
+    }
   }
 
   revalidatePath("/", "layout");

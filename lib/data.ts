@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { PromptWithMeta } from "@/lib/types";
+import type { PromptWithMeta, Profile } from "@/lib/types";
 
 interface RawPrompt {
   id: string;
@@ -74,4 +74,38 @@ export async function getPrompt(
 
   const upvotedIds = await getUpvotedIds(userId);
   return toMeta(data as unknown as RawPrompt, upvotedIds);
+}
+
+/** Get a user's profile by username, or null if not found. */
+export async function getProfileByUsername(
+  username: string,
+): Promise<Profile | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, username, created_at")
+    .eq("username", username)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
+/** Get all prompts by a specific user, newest first. */
+export async function getPromptsByUserId(
+  authorId: string,
+  userId: string | undefined,
+): Promise<PromptWithMeta[]> {
+  const supabase = await createClient();
+  const [{ data }, upvotedIds] = await Promise.all([
+    supabase
+      .from("prompts")
+      .select(PROMPT_SELECT)
+      .eq("user_id", authorId)
+      .order("created_at", { ascending: false }),
+    getUpvotedIds(userId),
+  ]);
+
+  return ((data ?? []) as unknown as RawPrompt[]).map((raw) =>
+    toMeta(raw, upvotedIds),
+  );
 }

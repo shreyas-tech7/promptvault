@@ -69,7 +69,18 @@ export function PromptCard({
 
       <CardFooter className="justify-between gap-2">
         <span className="truncate text-xs text-muted-foreground">
-          by {prompt.author ?? "anonymous"} · {formatDate(prompt.created_at)}
+          by{" "}
+          {prompt.author ? (
+            <Link
+              href={`/profiles/${prompt.author}`}
+              className="font-medium hover:underline"
+            >
+              {prompt.author}
+            </Link>
+          ) : (
+            "anonymous"
+          )}{" "}
+          · {formatDate(prompt.created_at)}
         </span>
         <div className="flex shrink-0 items-center gap-1">
           <CopyButton text={prompt.body} />

@@ -59,7 +59,18 @@ export default async function PromptDetailPage({
               {prompt.title}
             </h1>
             <p className="text-sm text-muted-foreground">
-              by {prompt.author ?? "anonymous"} · {formatDate(prompt.created_at)}
+              by{" "}
+              {prompt.author ? (
+                <Link
+                  href={`/profiles/${prompt.author}`}
+                  className="font-medium hover:underline"
+                >
+                  {prompt.author}
+                </Link>
+              ) : (
+                "anonymous"
+              )}{" "}
+              · {formatDate(prompt.created_at)}
             </p>
           </div>
           <UpvoteButton

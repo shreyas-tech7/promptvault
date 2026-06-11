@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SquarePen } from "lucide-react";
 import type { PromptWithMeta } from "@/lib/types";
 import {
@@ -32,19 +35,31 @@ export function PromptCard({
   isAuthenticated: boolean;
   isOwner: boolean;
 }) {
+  const router = useRouter();
+
+  const handleAuthorClick = (e: React.MouseEvent, author: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/profiles/${author}`);
+  };
+
+  const handleCardClick = () => {
+    router.push(`/prompts/${prompt.id}`);
+  };
+
   return (
-    <Card className="h-full">
+    <Card
+      className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer group/card"
+      onClick={handleCardClick}
+    >
       <CardHeader>
-        <Badge variant="secondary" className="mb-1">
+        <Badge variant="secondary" className="mb-1 w-fit">
           {prompt.category}
         </Badge>
         <CardTitle>
-          <Link
-            href={`/prompts/${prompt.id}`}
-            className="line-clamp-2 hover:underline"
-          >
+          <div className="line-clamp-2 group-hover/card:text-primary transition-colors">
             {prompt.title}
-          </Link>
+          </div>
         </CardTitle>
         {isOwner && (
           <CardAction className="flex items-center gap-1">
@@ -53,10 +68,15 @@ export function PromptCard({
               size="icon-sm"
               aria-label="Edit prompt"
               render={<Link href={`/prompts/${prompt.id}/edit`} />}
+              onClick={(e) => e.stopPropagation()}
             >
               <SquarePen />
             </Button>
-            <DeletePromptButton id={prompt.id} title={prompt.title} />
+            <DeletePromptButton
+              id={prompt.id}
+              title={prompt.title}
+              onClick={(e) => e.stopPropagation()}
+            />
           </CardAction>
         )}
       </CardHeader>
@@ -71,24 +91,28 @@ export function PromptCard({
         <span className="truncate text-xs text-muted-foreground">
           by{" "}
           {prompt.author ? (
-            <Link
-              href={`/profiles/${prompt.author}`}
-              className="font-medium hover:underline"
+            <button
+              onClick={(e) => handleAuthorClick(e, prompt.author!)}
+              className="font-medium hover:underline cursor-pointer bg-transparent border-none p-0"
             >
               {prompt.author}
-            </Link>
+            </button>
           ) : (
             "anonymous"
           )}{" "}
           · {formatDate(prompt.created_at)}
         </span>
         <div className="flex shrink-0 items-center gap-1">
-          <CopyButton text={prompt.body} />
+          <CopyButton
+            text={prompt.body}
+            onClick={(e) => e.stopPropagation()}
+          />
           <UpvoteButton
             promptId={prompt.id}
             count={prompt.upvotes}
             hasUpvoted={prompt.hasUpvoted}
             isAuthenticated={isAuthenticated}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       </CardFooter>

@@ -20,10 +20,12 @@ export function DeletePromptButton({
   id,
   title,
   variant = "icon",
+  onClick,
 }: {
   id: string;
   title: string;
   variant?: "icon" | "full";
+  onClick?: (e: React.MouseEvent) => void;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -35,9 +37,14 @@ export function DeletePromptButton({
     });
   }
 
+  function handleTriggerClick(e: React.MouseEvent) {
+    onClick?.(e);
+  }
+
   return (
     <Dialog>
       <DialogTrigger
+        onClick={handleTriggerClick}
         render={
           variant === "icon" ? (
             <Button

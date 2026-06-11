@@ -8,13 +8,16 @@ import { Button } from "@/components/ui/button";
 export function CopyButton({
   text,
   className,
+  onClick,
 }: {
   text: string;
   className?: string;
+  onClick?: (e: React.MouseEvent) => void;
 }) {
   const [copied, setCopied] = useState(false);
 
-  async function handleCopy() {
+  async function handleCopy(e: React.MouseEvent) {
+    onClick?.(e);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);

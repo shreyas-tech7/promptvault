@@ -13,16 +13,19 @@ export function UpvoteButton({
   count,
   hasUpvoted,
   isAuthenticated,
+  onClick,
 }: {
   promptId: string;
   count: number;
   hasUpvoted: boolean;
   isAuthenticated: boolean;
+  onClick?: (e: React.MouseEvent) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  function handleClick() {
+  function handleClick(e: React.MouseEvent) {
+    onClick?.(e);
     if (!isAuthenticated) {
       toast.error("Log in to upvote prompts.");
       router.push(`/login?redirectTo=/`);

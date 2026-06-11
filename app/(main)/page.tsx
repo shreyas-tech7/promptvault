@@ -34,7 +34,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-7xl px-4 py-12">
+      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:py-16">
         <Feed
           prompts={prompts}
           isAuthenticated={!!user}

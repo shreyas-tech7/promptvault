@@ -3,6 +3,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/layout/user-menu";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export async function Navbar() {
   const supabase = await createClient();
@@ -34,6 +35,7 @@ export async function Navbar() {
         </Link>
 
         <nav className="flex items-center gap-2">
+          <ThemeToggle />
           {user ? (
             <>
               <Button size="sm" render={<Link href="/prompts/new" />}>

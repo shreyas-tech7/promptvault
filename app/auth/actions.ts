@@ -50,6 +50,9 @@ export async function signup(
   if (username.length < 2) {
     return { error: "Username must be at least 2 characters long." };
   }
+  if (username.length > 50) {
+    return { error: "Username must be 50 characters or fewer." };
+  }
   if (!email) {
     return { error: "Please enter a valid email address." };
   }

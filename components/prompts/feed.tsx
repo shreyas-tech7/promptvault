@@ -1,14 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { ArrowUpDown, Search, Sparkles } from "lucide-react";
 import type { PromptWithMeta } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PromptCard } from "@/components/prompts/prompt-card";
 
 const ALL = "all";
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest" },
+  { value: "top", label: "Most upvoted" },
+] as const;
+
+type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
 export function Feed({
   prompts,
@@ -21,10 +35,11 @@ export function Feed({
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>(ALL);
+  const [sort, setSort] = useState<SortValue>("newest");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return prompts.filter((prompt) => {
+    const matches = prompts.filter((prompt) => {
       const matchesCategory = category === ALL || prompt.category === category;
       const matchesQuery =
         q.length === 0 ||
@@ -32,7 +47,13 @@ export function Feed({
         prompt.body.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
-  }, [prompts, query, category]);
+
+    if (sort === "top") {
+      // Stable copy-sort: ties keep the incoming newest-first order.
+      return [...matches].sort((a, b) => b.upvotes - a.upvotes);
+    }
+    return matches;
+  }, [prompts, query, category, sort]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,16 +70,39 @@ export function Feed({
           />
         </div>
 
-        <Tabs value={category} onValueChange={(value) => setCategory(value as string)}>
-          <TabsList className="flex h-auto w-full flex-wrap justify-start">
-            <TabsTrigger value={ALL}>All</TabsTrigger>
-            {CATEGORIES.map((cat) => (
-              <TabsTrigger key={cat} value={cat}>
-                {cat}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs
+            value={category}
+            onValueChange={(value) => setCategory(value as string)}
+          >
+            <TabsList className="flex h-auto w-full flex-wrap justify-start">
+              <TabsTrigger value={ALL}>All</TabsTrigger>
+              {CATEGORIES.map((cat) => (
+                <TabsTrigger key={cat} value={cat}>
+                  {cat}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <Select
+            items={SORT_OPTIONS}
+            value={sort}
+            onValueChange={(value) => setSort(value as SortValue)}
+          >
+            <SelectTrigger aria-label="Sort prompts">
+              <ArrowUpDown className="size-3.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {filtered.length === 0 ? (

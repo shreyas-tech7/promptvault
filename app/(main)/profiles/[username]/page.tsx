@@ -1,8 +1,8 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileByUsername, getPromptsByUserId } from "@/lib/data";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromptCard } from "@/components/prompts/prompt-card";
 
@@ -18,10 +18,11 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ username: string }>;
-}) {
+}): Promise<Metadata> {
   const { username } = await params;
   return {
     title: `${username}'s Profile — PromptVault`,
+    description: `Browse AI prompts shared by ${username} on PromptVault.`,
   };
 }
 
@@ -79,7 +80,7 @@ export default async function ProfilePage({
       {prompts.length > 0 ? (
         <div className="space-y-4">
           <h2 className="font-heading text-xl font-semibold tracking-tight">
-            {profile.username}'s Prompts
+            {profile.username}&apos;s Prompts
           </h2>
           <div className="grid gap-4 md:grid-cols-2">
             {prompts.map((prompt) => (
@@ -95,7 +96,7 @@ export default async function ProfilePage({
       ) : (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            <p>{profile.username} hasn't created any prompts yet.</p>
+            <p>{profile.username} hasn&apos;t created any prompts yet.</p>
           </CardContent>
         </Card>
       )}

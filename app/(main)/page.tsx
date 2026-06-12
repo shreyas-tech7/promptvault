@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getPrompts } from "@/lib/data";
+import { getCommunityStats, getPrompts } from "@/lib/data";
 import { Feed } from "@/components/prompts/feed";
 import { ToastOnLoad } from "@/components/toast-on-load";
 
@@ -16,7 +16,16 @@ export default async function HomePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const prompts = await getPrompts(user?.id);
+  const [prompts, stats] = await Promise.all([
+    getPrompts(user?.id),
+    getCommunityStats(),
+  ]);
+
+  const heroStats = [
+    { value: stats.prompts, label: stats.prompts === 1 ? "prompt" : "prompts" },
+    { value: stats.members, label: stats.members === 1 ? "member" : "members" },
+    { value: stats.upvotes, label: stats.upvotes === 1 ? "upvote" : "upvotes" },
+  ];
 
   return (
     <>
@@ -30,6 +39,18 @@ export default async function HomePage({
               Discover, save and upvote the best AI prompts for coding, writing,
               image generation and more.
             </p>
+            <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+              {heroStats.map((stat) => (
+                <div key={stat.label} className="flex items-baseline gap-2">
+                  <dd className="font-heading text-2xl font-semibold tabular-nums">
+                    {stat.value.toLocaleString("en-US")}
+                  </dd>
+                  <dt className="text-sm text-muted-foreground">
+                    {stat.label}
+                  </dt>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       </section>

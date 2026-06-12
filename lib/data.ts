@@ -76,6 +76,55 @@ export async function getPrompt(
   return toMeta(data as unknown as RawPrompt, upvotedIds);
 }
 
+/**
+ * Up to `limit` other prompts in the same category, newest first.
+ * Used for the "More in this category" section on the detail page.
+ */
+export async function getRelatedPrompts(
+  promptId: string,
+  category: string,
+  userId: string | undefined,
+  limit = 3,
+): Promise<PromptWithMeta[]> {
+  const supabase = await createClient();
+  const [{ data }, upvotedIds] = await Promise.all([
+    supabase
+      .from("prompts")
+      .select(PROMPT_SELECT)
+      .eq("category", category)
+      .neq("id", promptId)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    getUpvotedIds(userId),
+  ]);
+
+  return ((data ?? []) as unknown as RawPrompt[]).map((raw) =>
+    toMeta(raw, upvotedIds),
+  );
+}
+
+export interface CommunityStats {
+  prompts: number;
+  members: number;
+  upvotes: number;
+}
+
+/** Headline numbers for the home hero. Uses head-only count queries. */
+export async function getCommunityStats(): Promise<CommunityStats> {
+  const supabase = await createClient();
+  const [prompts, members, upvotes] = await Promise.all([
+    supabase.from("prompts").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("upvotes").select("*", { count: "exact", head: true }),
+  ]);
+
+  return {
+    prompts: prompts.count ?? 0,
+    members: members.count ?? 0,
+    upvotes: upvotes.count ?? 0,
+  };
+}
+
 /** Get a user's profile by username, or null if not found. */
 export async function getProfileByUsername(
   username: string,

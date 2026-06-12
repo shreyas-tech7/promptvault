@@ -1,14 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SquarePen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getPrompt } from "@/lib/data";
+import { getPrompt, getRelatedPrompts } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CopyButton } from "@/components/prompts/copy-button";
+import { ShareButton } from "@/components/prompts/share-button";
 import { UpvoteButton } from "@/components/prompts/upvote-button";
 import { DeletePromptButton } from "@/components/prompts/delete-prompt-button";
+import { PromptCard } from "@/components/prompts/prompt-card";
 import { ToastOnLoad } from "@/components/toast-on-load";
 
 function formatDate(iso: string): string {
@@ -17,6 +20,31 @@ function formatDate(iso: string): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const prompt = await getPrompt(id, undefined);
+  if (!prompt) {
+    return { title: "Prompt not found — PromptVault" };
+  }
+
+  const description =
+    prompt.body.length > 160 ? `${prompt.body.slice(0, 157)}…` : prompt.body;
+
+  return {
+    title: `${prompt.title} — PromptVault`,
+    description,
+    openGraph: {
+      title: prompt.title,
+      description,
+      type: "article",
+    },
+  };
 }
 
 export default async function PromptDetailPage({
@@ -39,6 +67,7 @@ export default async function PromptDetailPage({
   if (!prompt) notFound();
 
   const isOwner = !!user && prompt.user_id === user.id;
+  const related = await getRelatedPrompts(prompt.id, prompt.category, user?.id);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8">
@@ -88,7 +117,10 @@ export default async function PromptDetailPage({
             </pre>
           </CardContent>
           <CardFooter className="justify-between gap-2">
-            <CopyButton text={prompt.body} />
+            <div className="flex items-center gap-2">
+              <CopyButton text={prompt.body} />
+              <ShareButton promptId={prompt.id} />
+            </div>
             {isOwner && (
               <div className="flex items-center gap-2">
                 <Button
@@ -107,6 +139,24 @@ export default async function PromptDetailPage({
             )}
           </CardFooter>
         </Card>
+
+        {related.length > 0 && (
+          <section className="mt-6 flex flex-col gap-4">
+            <h2 className="font-heading text-lg font-semibold tracking-tight">
+              More in {prompt.category}
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((relatedPrompt) => (
+                <PromptCard
+                  key={relatedPrompt.id}
+                  prompt={relatedPrompt}
+                  isAuthenticated={!!user}
+                  isOwner={!!user && relatedPrompt.user_id === user.id}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <ToastOnLoad value={toastValue} />

@@ -50,6 +50,11 @@ export function PromptForm({
   // `body` is controlled so the AI enhancer can insert suggestions into it.
   const [body, setBody] = useState(defaultValues?.body ?? "");
 
+  function handleEnhanceApply(text: string) {
+    setBody(text);
+    toast.success("Inserted into your prompt.");
+  }
+
   useEffect(() => {
     if (state?.error) toast.error(state.error);
   }, [state]);
@@ -96,7 +101,7 @@ export function PromptForm({
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <Label htmlFor="body">Prompt</Label>
-          <EnhanceDialog draft={body} onApply={setBody} />
+          <EnhanceDialog draft={body} onApply={handleEnhanceApply} />
         </div>
         <Textarea
           id="body"

@@ -18,8 +18,10 @@ import {
 interface EnhanceDialogProps {
   /** The current prompt body — given to the assistant as context. */
   draft: string;
-  /** Called when the user inserts a suggested prompt into the form. */
+  /** Called when the user accepts a suggested prompt. Caller is responsible for any side-effects and toast. */
   onApply: (text: string) => void;
+  /** Label for the accept button inside each assistant message. Default: "Insert into prompt". */
+  applyLabel?: string;
 }
 
 /**
@@ -33,7 +35,7 @@ function extractPrompt(text: string): string {
   return (last ? last[1] : text).trim();
 }
 
-export function EnhanceDialog({ draft, onApply }: EnhanceDialogProps) {
+export function EnhanceDialog({ draft, onApply, applyLabel = "Insert into prompt" }: EnhanceDialogProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -70,7 +72,6 @@ export function EnhanceDialog({ draft, onApply }: EnhanceDialogProps) {
 
   function handleApply(text: string) {
     onApply(extractPrompt(text));
-    toast.success("Inserted into your prompt.");
     setOpen(false);
   }
 
@@ -141,7 +142,7 @@ export function EnhanceDialog({ draft, onApply }: EnhanceDialogProps) {
                   className="mt-2"
                   onClick={() => handleApply(message.text)}
                 >
-                  Insert into prompt
+                  {applyLabel}
                 </Button>
               )}
             </div>

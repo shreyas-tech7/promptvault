@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { CopyButton } from "@/components/prompts/copy-button";
+import { EnhanceViewButton } from "@/components/prompts/enhance-view-button";
 import { ShareButton } from "@/components/prompts/share-button";
 import { UpvoteButton } from "@/components/prompts/upvote-button";
 import { DeletePromptButton } from "@/components/prompts/delete-prompt-button";
@@ -116,10 +117,11 @@ export default async function PromptDetailPage({
               {prompt.body}
             </pre>
           </CardContent>
-          <CardFooter className="justify-between gap-2">
+          <CardFooter className="flex-wrap justify-between gap-2">
             <div className="flex items-center gap-2">
               <CopyButton text={prompt.body} />
               <ShareButton promptId={prompt.id} />
+              {user && <EnhanceViewButton promptBody={prompt.body} />}
             </div>
             {isOwner && (
               <div className="flex items-center gap-2">

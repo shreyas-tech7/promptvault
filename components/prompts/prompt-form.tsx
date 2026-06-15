@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { PromptFormState } from "@/app/prompts/actions";
 import { CATEGORIES } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { EnhanceDialog } from "@/components/prompts/enhance-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,6 +46,9 @@ export function PromptForm({
   const [category, setCategory] = useState<string | null>(
     defaultValues?.category ?? null,
   );
+
+  // `body` is controlled so the AI enhancer can insert suggestions into it.
+  const [body, setBody] = useState(defaultValues?.body ?? "");
 
   useEffect(() => {
     if (state?.error) toast.error(state.error);
@@ -90,12 +94,16 @@ export function PromptForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="body">Prompt</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="body">Prompt</Label>
+          <EnhanceDialog draft={body} onApply={setBody} />
+        </div>
         <Textarea
           id="body"
           name="body"
           placeholder="Write the full prompt here…"
-          defaultValue={defaultValues?.body}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
           className="min-h-48"
           maxLength={5000}
           required
